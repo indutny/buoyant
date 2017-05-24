@@ -13,7 +13,7 @@ Fully adjustable language-agnostic bytecode VM with:
 * Customizable bytecode
 * Inline caches (i.o.w., capable of rewriting bytecode on the fly)
 
-Goals:
+## Goals
 
 * Running on large selection of hardware from servers to memory-constrained
   embedded devices
