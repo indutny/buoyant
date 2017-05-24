@@ -13,6 +13,13 @@ Fully adjustable language-agnostic bytecode VM with:
 * Customizable bytecode
 * Inline caches (i.o.w., capable of rewriting bytecode on the fly)
 
+Goals:
+
+* Running on large selection of hardware from servers to memory-constrained
+  embedded devices
+* Execution performance
+* Multi-Language interoperability
+
 ### Garbage Collector
 
 GC is not conservative (i.e. moves data), the layout is the same for all objects
