@@ -32,63 +32,53 @@ GC is not conservative (i.e. moves data), the layout is the same for all objects
 ...
 ```
 
-NOTE: Although object pointer starts with the first heap slot, VM implementation
-may put some PRIVATE fields right before it. Implementation MUST NOT overwrite
-these slots.
-
-NOTE: If object inherits from non-empty Type - parent's heap and binary slots
-will be added to the object. The object's slots are the last ones in the layout.
-
-Heap implementation provides default opcode for allocating object
-of specific type. Number of arguments is 1.
+TBD
 
 ### Customizable Bytecode
 
 All bytecode opcodes are described in the source module. Each opcode
-MUST have default implementation in C (supplied through shared library) OR MUST
-be implemented in terms of other opcodes declared previously.
+is implemented in terms of internal bytecode. Internal bytecode is subset of
+[wasm] instructions, and thus is very low-level. It interacts with VM by
+reading/writing VM's registers.
 
-Each opcode MUST specify number of arguments.
-
-OPTIONALLY source module may contain specialized implementations of
-opcodes.
-Two specializations are available that can be combined at the same time:
-
-* By Architecture
-* By Input Types
+Trivial Buoyant implementation can emulate internal bytecode. Advanced should
+generate machine code for opcodes implemented in terms of internal bytecode.
+This way a dispatch loop becomes similar to the one in [luajit][1].
 
 ### Types
 
-Following types are provided by default:
+TBD
 
-* HeapObject
-* int64 (which may be boxed or unboxed, depending on VM implementation)
-* double (which may be boxed or unboxed, depending on VM implementation)
+### Inline Cache (IC)
 
-Each type is described in the source module. Type definition MUST include:
+Internal bytecode provides following instructions for facilitating use of ICs:
 
-* Parent type (can't be `int64` and `double`)
-* Number of heap slots
-* Number of binary slots
+* `ic-fork reg_obj, imm_off`
+* `ic-join`
 
-OPTIONALLY type may include reference to destructor opcode. This
-opcode MUST have an argument count set equal to 1.
+NOTE: Only one use of `ic-fork` per opcode implementation is allowed.
 
-### Inline Cache
+Let's work out an example implementation of fictitious
+`obj-prop obj, str` opcode:
 
-At first all opcodes start in `UNINITIALIZED` state. Once they are executed
-: appropriate opcode implementation will be invoked. If no specializations
-are available, or none matches the types. Opcode switches to `INITIALIZED`
-state, a counter internal to the opcode location is set to `0`.
+```
+load-arg r0, 0  # load `obj` into `r0`
+load-arg r1, 1  # load `str` into `r1`
 
-In `INITIALIZATION` phase every input type combination that hasn't been
-previously seen increments internal counter. If the counter value is bigger than
-configurable limit, opcode switches to `MEGAMORPHIC` phase.
+# Let's say `r[0]` holds object's type
+ic-fork r0, 0
 
-In `MEGAMORPHIC` phase type-specific implementations of opcode are never
-called.
+# Call C function to get property offset into `r1`
+runtime-call <get_property_offset>, r0, r1
 
-NOTE: all states are local to the particular opcode location.
+ic-join
+
+# Load property from r0[r1] into r2
+mem-load r0, r1, r2
+ret r2
+```
+
+TBD
 
 ## Bytecode
 
@@ -97,11 +87,7 @@ Specific implementation of VM MAY place the limit of number
 of registers, minimum number of TBD registers MUST be supported by all
 implementations.
 
-There are default opcodes that MUST be provided by VM for allocating:
-
-* Object of non-int64, non-double type
-* int64 value
-* double value
+TBD
 
 ## LICENSE
 
@@ -127,3 +113,6 @@ NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[0]: http://webassembly.org/
+[1]: http://luajit.org/
