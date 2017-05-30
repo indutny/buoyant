@@ -65,7 +65,7 @@ Let's work out an example implementation of fictitious
 load-arg r0, 0  # load `obj` into `r0`
 load-arg r1, 1  # load `str` into `r1`
 
-# Let's say `r[0]` holds object's type
+# Let's say `r0[0]` holds object's type
 ic-fork r0, 0
 
 # Call C function to get property offset into `r1`
@@ -78,7 +78,25 @@ mem-load r0, r1, r2
 ret r2
 ```
 
-TBD
+At first the VM will execute this instruction sequence as it is. Then it will
+use the value of `r0[0]` to generate following code:
+
+```
+load-arg r0, 0  # load `obj` into `r0`
+load-arg r1, 1  # load `str` into `r1`
+
+mem-load-imm r0, 0, r2
+is-eq r2, <cached value>, &not_equal
+mem-load-imm r0, <cached value of r1 from previous run>, r2
+ret r2
+
+not_equal:
+jmp &original_implementation
+```
+
+As it is executed more and more - more cases will be added to this branching
+code, up to some limit fixed by VM's implementation. Past that limit, the
+implementation will revert to the original one.
 
 ## Bytecode
 
